@@ -25,8 +25,7 @@ function logout(): void {
     <header class="topbar">
       <strong>Task Manager</strong>
 
-      <nav class="links">
-        <RouterLink :to="{ name: routeNames.dashboard }">Dashboard</RouterLink>
+      <nav class="links" v-if="!authStore.isAuthenticated">
         <RouterLink :to="{ name: routeNames.login }">Login</RouterLink>
         <RouterLink :to="{ name: routeNames.register }">Register</RouterLink>
       </nav>

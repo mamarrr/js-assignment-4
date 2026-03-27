@@ -58,58 +58,67 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-view">
-    <h1>Register</h1>
-    <p class="status info">Create a new account to start managing tasks.</p>
+  <div class="auth-page">
+    <section class="auth-view">
+      <h1>Register</h1>
+      <p class="status info">Create a new account to start managing tasks.</p>
 
-    <p v-if="authStore.errorMessage" class="status error">{{ authStore.errorMessage }}</p>
+      <p v-if="authStore.errorMessage" class="status error">{{ authStore.errorMessage }}</p>
 
-    <form class="auth-form" @submit.prevent="submit">
-      <fieldset :disabled="authStore.isLoading">
-        <label>
-          First name
-          <input v-model="form.firstName" autocomplete="given-name" @blur="validateInline" />
-          <small v-if="errors.firstName" class="field-error">{{ errors.firstName }}</small>
-        </label>
+      <form class="auth-form" @submit.prevent="submit">
+        <fieldset :disabled="authStore.isLoading">
+          <label>
+            First name
+            <input v-model="form.firstName" autocomplete="given-name" @blur="validateInline" />
+            <small v-if="errors.firstName" class="field-error">{{ errors.firstName }}</small>
+          </label>
 
-        <label>
-          Last name
-          <input v-model="form.lastName" autocomplete="family-name" @blur="validateInline" />
-          <small v-if="errors.lastName" class="field-error">{{ errors.lastName }}</small>
-        </label>
+          <label>
+            Last name
+            <input v-model="form.lastName" autocomplete="family-name" @blur="validateInline" />
+            <small v-if="errors.lastName" class="field-error">{{ errors.lastName }}</small>
+          </label>
 
-        <label>
-          Email
-          <input v-model="form.email" type="email" autocomplete="email" @blur="validateInline" />
-          <small v-if="errors.email" class="field-error">{{ errors.email }}</small>
-        </label>
+          <label>
+            Email
+            <input v-model="form.email" type="email" autocomplete="email" @blur="validateInline" />
+            <small v-if="errors.email" class="field-error">{{ errors.email }}</small>
+          </label>
 
-        <label>
-          Password
-          <input
-            v-model="form.password"
-            type="password"
-            autocomplete="new-password"
-            @blur="validateInline"
-          />
-          <small v-if="errors.password" class="field-error">{{ errors.password }}</small>
-        </label>
+          <label>
+            Password
+            <input
+              v-model="form.password"
+              type="password"
+              autocomplete="new-password"
+              @blur="validateInline"
+            />
+            <small v-if="errors.password" class="field-error">{{ errors.password }}</small>
+          </label>
 
-        <button type="submit">
-          {{ authStore.isLoading ? 'Creating account...' : 'Register' }}
-        </button>
-      </fieldset>
-    </form>
-  </section>
+          <button type="submit">
+            {{ authStore.isLoading ? 'Creating account...' : 'Register' }}
+          </button>
+        </fieldset>
+      </form>
+    </section>
+  </div>
 </template>
 
 <style scoped>
+.auth-page {
+  min-height: calc(100vh - 9rem);
+  display: grid;
+  place-items: center;
+  padding: 1rem 0;
+}
+
 .auth-view {
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1.25rem;
-  max-width: 520px;
+  width: min(520px, 100%);
 }
 
 .auth-form {

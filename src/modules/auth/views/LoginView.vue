@@ -54,44 +54,53 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-view">
-    <h1>Login</h1>
-    <p class="status info">Use your account credentials to continue.</p>
+  <div class="auth-page">
+    <section class="auth-view">
+      <h1>Login</h1>
+      <p class="status info">Use your account credentials to continue.</p>
 
-    <p v-if="authStore.errorMessage" class="status error">{{ authStore.errorMessage }}</p>
+      <p v-if="authStore.errorMessage" class="status error">{{ authStore.errorMessage }}</p>
 
-    <form class="auth-form" @submit.prevent="submit">
-      <fieldset :disabled="authStore.isLoading">
-        <label>
-          Email
-          <input v-model="form.email" type="email" autocomplete="email" @blur="validateInline" />
-          <small v-if="errors.email" class="field-error">{{ errors.email }}</small>
-        </label>
+      <form class="auth-form" @submit.prevent="submit">
+        <fieldset :disabled="authStore.isLoading">
+          <label>
+            Email
+            <input v-model="form.email" type="email" autocomplete="email" @blur="validateInline" />
+            <small v-if="errors.email" class="field-error">{{ errors.email }}</small>
+          </label>
 
-        <label>
-          Password
-          <input
-            v-model="form.password"
-            type="password"
-            autocomplete="current-password"
-            @blur="validateInline"
-          />
-          <small v-if="errors.password" class="field-error">{{ errors.password }}</small>
-        </label>
+          <label>
+            Password
+            <input
+              v-model="form.password"
+              type="password"
+              autocomplete="current-password"
+              @blur="validateInline"
+            />
+            <small v-if="errors.password" class="field-error">{{ errors.password }}</small>
+          </label>
 
-        <button type="submit">{{ authStore.isLoading ? 'Signing in...' : 'Login' }}</button>
-      </fieldset>
-    </form>
-  </section>
+          <button type="submit">{{ authStore.isLoading ? 'Signing in...' : 'Login' }}</button>
+        </fieldset>
+      </form>
+    </section>
+  </div>
 </template>
 
 <style scoped>
+.auth-page {
+  min-height: calc(100vh - 9rem);
+  display: grid;
+  place-items: center;
+  padding: 1rem 0;
+}
+
 .auth-view {
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1.25rem;
-  max-width: 520px;
+  width: min(520px, 100%);
 }
 
 .auth-form {
