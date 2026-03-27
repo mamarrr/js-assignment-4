@@ -1,6 +1,16 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
+import {
+  applyTaskFilters,
+  buildActiveTaskFilterChips,
+  clearTaskFilterField,
+  createDefaultTaskFilterCriteria,
+  getActiveTaskFilterCount,
+  mergeTaskFilterCriteria,
+  type TaskFilterField,
+  type TodoTaskFilterCriteria,
+} from '@/modules/tasks/composables/task-filters'
 import { tasksService } from '@/modules/tasks/services/tasks.service'
 import type {
   TodoTaskCreateInput,
@@ -15,10 +25,20 @@ function toStoreError(error: unknown): string {
 
 export const useTasksStore = defineStore('tasks', () => {
   const items = ref<TodoTaskModel[]>([])
+  const filterCriteria = ref<TodoTaskFilterCriteria>(createDefaultTaskFilterCriteria())
   const isLoading = ref(false)
   const isMutating = ref(false)
   const hasLoaded = ref(false)
   const errorMessage = ref<string | null>(null)
+
+  const filteredItems = computed(() => applyTaskFilters(items.value, filterCriteria.value))
+  const filteredTasks = computed(() => filteredItems.value)
+  const hasActiveFilters = computed(() => getActiveTaskFilterCount(filterCriteria.value) > 0)
+  const activeFilterCount = computed(() => getActiveTaskFilterCount(filterCriteria.value))
+  const activeFilterChips = computed(() => buildActiveTaskFilterChips(filterCriteria.value))
+  const resultSummary = computed(
+    () => `Showing ${filteredItems.value.length} of ${items.value.length} tasks`,
+  )
 
   const isEmpty = computed(() => hasLoaded.value && items.value.length === 0)
 
@@ -131,8 +151,21 @@ export const useTasksStore = defineStore('tasks', () => {
     await updateTask(id, { archived: !current.archived })
   }
 
+  function updateFilterCriteria(patch: Partial<TodoTaskFilterCriteria>): void {
+    filterCriteria.value = mergeTaskFilterCriteria(filterCriteria.value, patch)
+  }
+
+  function clearFilterCriteriaField(field: TaskFilterField): void {
+    filterCriteria.value = clearTaskFilterField(filterCriteria.value, field)
+  }
+
+  function resetFilters(): void {
+    filterCriteria.value = createDefaultTaskFilterCriteria()
+  }
+
   function resetState(): void {
     items.value = []
+    resetFilters()
     isLoading.value = false
     isMutating.value = false
     hasLoaded.value = false
@@ -141,6 +174,13 @@ export const useTasksStore = defineStore('tasks', () => {
 
   return {
     items,
+    filterCriteria,
+    filteredItems,
+    filteredTasks,
+    hasActiveFilters,
+    activeFilterCount,
+    activeFilterChips,
+    resultSummary,
     isLoading,
     isMutating,
     hasLoaded,
@@ -152,6 +192,9 @@ export const useTasksStore = defineStore('tasks', () => {
     deleteTask,
     toggleCompleted,
     toggleArchived,
+    updateFilterCriteria,
+    clearFilterCriteriaField,
+    resetFilters,
     resetState,
   }
 })

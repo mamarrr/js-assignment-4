@@ -4,6 +4,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useCategoriesStore } from '@/modules/categories/stores/categories.store'
 import { usePrioritiesStore } from '@/modules/priorities/stores/priorities.store'
 import { useTasksStore } from '@/modules/tasks/stores/tasks.store'
+import type { TaskFilterChip } from '@/modules/tasks'
 import type { TodoTaskModel } from '@/modules/tasks/types/task.model'
 import { toAppErrorMessage } from '@/shared/utils/error-message'
 import { validateTaskForm, type TaskFormValues } from '@/shared/validation/forms'
@@ -40,9 +41,9 @@ const isInitialLoading = computed(() => {
   return tasksStore.isLoading || prioritiesStore.isLoading || categoriesStore.isLoading
 })
 
-const visibleTasks = computed(() => {
-  return tasksStore.items.filter((task) => !task.archived)
-})
+const visibleTasks = computed(() => tasksStore.filteredTasks)
+const activeFilterChips = computed(() => tasksStore.activeFilterChips)
+const resultSummary = computed(() => tasksStore.resultSummary)
 
 const canCreateTask = computed(() => {
   return Boolean(prioritiesStore.items.length && categoriesStore.items.length)
@@ -123,6 +124,10 @@ function resolvePriorityName(priorityId: string): string {
 
 function resolveCategoryName(categoryId: string): string {
   return categoryNameById.value.get(categoryId) || 'Unknown category'
+}
+
+function removeFilterChip(field: TaskFilterChip['field']): void {
+  tasksStore.clearFilterCriteriaField(field)
 }
 
 async function submitTaskCreate(): Promise<void> {
@@ -309,9 +314,36 @@ watch(
       </fieldset>
     </form>
 
+    <p class="result-summary">{{ resultSummary }}</p>
+    <p class="sr-only" aria-live="polite">{{ resultSummary }}</p>
+
+    <section v-if="activeFilterChips.length > 0" class="chips-block" aria-label="Active filters">
+      <div class="chips-row">
+        <button
+          v-for="chip in activeFilterChips"
+          :key="chip.key"
+          type="button"
+          class="chip"
+          :aria-label="`Remove filter ${chip.label}`"
+          @click="removeFilterChip(chip.field)"
+        >
+          {{ chip.label }}
+          <span aria-hidden="true"> ×</span>
+        </button>
+      </div>
+
+      <button type="button" class="secondary" @click="tasksStore.resetFilters">
+        Reset all filters
+      </button>
+    </section>
+
     <p v-if="tasksStore.isLoading" class="status info">Loading tasks...</p>
     <p v-else-if="tasksStore.errorMessage" class="status error">{{ tasksStore.errorMessage }}</p>
-    <p v-else-if="visibleTasks.length === 0" class="status empty">No tasks available yet.</p>
+    <p v-else-if="visibleTasks.length === 0" class="status empty">
+      {{
+        tasksStore.hasActiveFilters ? 'No tasks match current filters.' : 'No tasks available yet.'
+      }}
+    </p>
 
     <div v-else class="tasks-list">
       <article v-for="task in visibleTasks" :key="task.id" class="card task-card">
@@ -428,6 +460,27 @@ watch(
   margin-top: 1rem;
 }
 
+.result-summary {
+  margin: 0.75rem 0 0;
+  font-weight: 600;
+}
+
+.chips-block {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  border-radius: 999px;
+}
+
 .panel {
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
@@ -518,5 +571,17 @@ button.danger {
 
 .field-error {
   color: #c23f3f;
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 </style>
