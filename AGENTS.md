@@ -76,13 +76,9 @@ The UI should be energetic, responsive and easy to use. This is a single page ap
 - Do not hardcode environment-specific URLs in components.
 - Keep security-sensitive behavior centralized in auth/API modules.
 
-## Definition of done (planning baseline)
+## Implementation plan
 
-- Register, Login, RefreshToken, Logout flows work end-to-end.
-- Session restore on page reload works from stored tokens.
-- Protected routes are inaccessible without valid auth.
-- TodoTasks, TodoPriorities, TodoCategories CRUD is implemented and wired to backend.
-- Lint, type-check, and production build succeed.
+Implementation-plan content was moved to `plans/IMPLEMENTATION_PLAN.md`.
 
 
 
