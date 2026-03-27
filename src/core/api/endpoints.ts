@@ -10,8 +10,16 @@ import type {
   TodoCategoryDto,
   TodoCategoryEditDto,
 } from '@/modules/categories/types/category.dto'
-import type { TodoPriorityDto } from '@/modules/priorities/types/priority.dto'
-import type { TodoTaskDto } from '@/modules/tasks/types/task.dto'
+import type {
+  TodoPriorityCreateDto,
+  TodoPriorityDto,
+  TodoPriorityUpdateDto,
+} from '@/modules/priorities/types/priority.dto'
+import type {
+  TodoTaskCreateDto,
+  TodoTaskDto,
+  TodoTaskUpdateDto,
+} from '@/modules/tasks/types/task.dto'
 
 interface AuthQueryDto extends Record<string, string | number | boolean | null | undefined> {
   expiresInSeconds?: number
@@ -45,7 +53,7 @@ export const apiEndpoints = {
       method: 'POST',
       path: '/TodoTasks',
       requiresAuth: true,
-    } satisfies ApiEndpoint<TodoTaskDto, TodoTaskDto>,
+    } satisfies ApiEndpoint<TodoTaskCreateDto, TodoTaskDto>,
     getById: {
       method: 'GET',
       path: '/TodoTasks/{id}',
@@ -55,7 +63,7 @@ export const apiEndpoints = {
       method: 'PUT',
       path: '/TodoTasks/{id}',
       requiresAuth: true,
-    } satisfies ApiEndpoint<TodoTaskDto, TodoTaskDto>,
+    } satisfies ApiEndpoint<TodoTaskUpdateDto, TodoTaskDto>,
     deleteById: {
       method: 'DELETE',
       path: '/TodoTasks/{id}',
@@ -72,7 +80,7 @@ export const apiEndpoints = {
       method: 'POST',
       path: '/TodoPriorities',
       requiresAuth: true,
-    } satisfies ApiEndpoint<TodoPriorityDto, TodoPriorityDto>,
+    } satisfies ApiEndpoint<TodoPriorityCreateDto, TodoPriorityDto>,
     getById: {
       method: 'GET',
       path: '/TodoPriorities/{id}',
@@ -82,7 +90,7 @@ export const apiEndpoints = {
       method: 'PUT',
       path: '/TodoPriorities/{id}',
       requiresAuth: true,
-    } satisfies ApiEndpoint<TodoPriorityDto, void>,
+    } satisfies ApiEndpoint<TodoPriorityUpdateDto, void>,
     deleteById: {
       method: 'DELETE',
       path: '/TodoPriorities/{id}',

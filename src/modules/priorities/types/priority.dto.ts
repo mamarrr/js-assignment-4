@@ -8,3 +8,19 @@ export interface TodoPriorityDto {
   syncDt: IsoDateTimeString
   tag: string | null
 }
+
+export interface TodoPriorityCreateDto {
+  id: Uuid
+  priorityName: string | null
+  prioritySort: number
+  tag: string | null
+}
+
+export interface TodoPriorityUpdateDto {
+  id: Uuid
+  appUserId: Uuid
+  priorityName: string | null
+  prioritySort: number
+  syncDt: IsoDateTimeString | null
+  tag: string | null
+}
