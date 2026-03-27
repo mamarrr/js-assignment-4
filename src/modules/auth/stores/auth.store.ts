@@ -16,6 +16,7 @@ import type {
   RefreshTokenRequestDto,
   RegisterRequestDto,
 } from '@/modules/auth/types/auth.dto'
+import { toAppErrorMessage } from '@/shared/utils/error-message'
 import { resetFeatureStores } from '@/stores/reset'
 
 function isNonEmpty(value: string | null | undefined): value is string {
@@ -27,6 +28,8 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshToken = ref<string | null>(null)
   const firstName = ref<string | null>(null)
   const lastName = ref<string | null>(null)
+  const isLoading = ref(false)
+  const errorMessage = ref<string | null>(null)
 
   const isAuthenticated = computed(() => Boolean(accessToken.value && refreshToken.value))
 
@@ -44,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = null
     firstName.value = null
     lastName.value = null
+    errorMessage.value = null
     clearStoredSession()
   }
 
@@ -69,13 +73,33 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(payload: LoginRequestDto, query?: AuthRequestQuery): Promise<void> {
-    const response = await authService.login(payload, query)
-    applyJwtSession(response)
+    isLoading.value = true
+    errorMessage.value = null
+
+    try {
+      const response = await authService.login(payload, query)
+      applyJwtSession(response)
+    } catch (error) {
+      errorMessage.value = toAppErrorMessage(error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
   }
 
   async function register(payload: RegisterRequestDto, query?: AuthRequestQuery): Promise<void> {
-    const response = await authService.register(payload, query)
-    applyJwtSession(response)
+    isLoading.value = true
+    errorMessage.value = null
+
+    try {
+      const response = await authService.register(payload, query)
+      applyJwtSession(response)
+    } catch (error) {
+      errorMessage.value = toAppErrorMessage(error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
   }
 
   async function refreshSession(query?: AuthRequestQuery): Promise<string> {
@@ -135,6 +159,8 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken,
     firstName,
     lastName,
+    isLoading,
+    errorMessage,
     isAuthenticated,
     initializeFromStorage,
     login,

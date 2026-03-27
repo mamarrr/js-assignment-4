@@ -1,25 +1,16 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { ApiClientError } from '@/core/api/http-client'
 import { prioritiesService } from '@/modules/priorities/services/priorities.service'
 import type {
   TodoPriorityCreateInput,
   TodoPriorityModel,
   TodoPriorityUpdateInput,
 } from '@/modules/priorities/types/priority.model'
-import { toUserMessage } from '@/shared/utils/error-message'
+import { toAppErrorMessage } from '@/shared/utils/error-message'
 
 function toStoreError(error: unknown): string {
-  if (error instanceof ApiClientError) {
-    return toUserMessage(error.body)
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  return 'Unexpected error. Please try again.'
+  return toAppErrorMessage(error)
 }
 
 export const usePrioritiesStore = defineStore('priorities', () => {

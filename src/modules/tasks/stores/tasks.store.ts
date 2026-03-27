@@ -1,25 +1,16 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { ApiClientError } from '@/core/api/http-client'
 import { tasksService } from '@/modules/tasks/services/tasks.service'
 import type {
   TodoTaskCreateInput,
   TodoTaskModel,
   TodoTaskUpdateInput,
 } from '@/modules/tasks/types/task.model'
-import { toUserMessage } from '@/shared/utils/error-message'
+import { toAppErrorMessage } from '@/shared/utils/error-message'
 
 function toStoreError(error: unknown): string {
-  if (error instanceof ApiClientError) {
-    return toUserMessage(error.body)
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  return 'Unexpected error. Please try again.'
+  return toAppErrorMessage(error)
 }
 
 export const useTasksStore = defineStore('tasks', () => {
