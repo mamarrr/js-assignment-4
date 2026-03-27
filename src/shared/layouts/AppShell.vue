@@ -13,7 +13,7 @@ const fullName = computed(() => {
 })
 
 function logout(): void {
-  authStore.clearSession()
+  authStore.logout()
   void router.push({ name: routeNames.login })
 }
 </script>

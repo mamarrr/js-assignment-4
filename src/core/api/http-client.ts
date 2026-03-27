@@ -2,6 +2,11 @@ import { getStoredAccessToken } from '@/core/auth/token-storage'
 import { apiConfig, withApiVersion } from '@/core/config/api'
 import type { ApiErrorResponse, QueryParams, RequestOptions } from '@/core/api/types'
 
+interface AuthHandlers {
+  refreshAccessToken: (() => Promise<string>) | null
+  onRefreshFailure: (() => void | Promise<void>) | null
+}
+
 export class ApiClientError extends Error {
   status: number
   body: unknown
@@ -48,13 +53,48 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 }
 
 class ApiClient {
-  private onUnauthorized: (() => void) | null = null
+  private refreshAccessToken: (() => Promise<string>) | null = null
+  private onRefreshFailure: (() => void | Promise<void>) | null = null
+  private refreshInFlight: Promise<string> | null = null
 
-  setUnauthorizedHandler(handler: (() => void) | null): void {
-    this.onUnauthorized = handler
+  setAuthHandlers(handlers: AuthHandlers): void {
+    this.refreshAccessToken = handlers.refreshAccessToken
+    this.onRefreshFailure = handlers.onRefreshFailure
   }
 
-  async request<TResponse, TBody = unknown>(options: RequestOptions<TBody>): Promise<TResponse> {
+  private async runRefreshSingleFlight(): Promise<string> {
+    if (!this.refreshAccessToken) {
+      throw new Error('Missing refresh handler')
+    }
+
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.refreshAccessToken()
+        .then((newAccessToken) => {
+          if (!newAccessToken) {
+            throw new Error('Refresh handler returned empty access token')
+          }
+
+          return newAccessToken
+        })
+        .catch(async (error) => {
+          if (this.onRefreshFailure) {
+            await this.onRefreshFailure()
+          }
+
+          throw error
+        })
+        .finally(() => {
+          this.refreshInFlight = null
+        })
+    }
+
+    return this.refreshInFlight
+  }
+
+  async request<TResponse, TBody = unknown>(
+    options: RequestOptions<TBody>,
+    hasRetried = false,
+  ): Promise<TResponse> {
     const accessToken = getStoredAccessToken()
     const path = withApiVersion(options.path)
     const queryString = buildQueryString(options.query)
@@ -82,8 +122,15 @@ class ApiClient {
     const parsedBody = await parseResponseBody(response)
 
     if (!response.ok) {
-      if (response.status === 401 && this.onUnauthorized) {
-        this.onUnauthorized()
+      const shouldAttemptRefresh =
+        response.status === 401 &&
+        options.requiresAuth !== false &&
+        options.skipAuthRefresh !== true &&
+        !hasRetried
+
+      if (shouldAttemptRefresh) {
+        await this.runRefreshSingleFlight()
+        return this.request(options, true)
       }
 
       throw new ApiClientError({

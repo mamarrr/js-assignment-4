@@ -35,6 +35,7 @@ export const authService = {
       query,
       body: payload,
       requiresAuth: apiEndpoints.auth.refreshToken.requiresAuth,
+      skipAuthRefresh: true,
     })
   },
 }

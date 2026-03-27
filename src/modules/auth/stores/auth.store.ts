@@ -3,11 +3,24 @@ import { defineStore } from 'pinia'
 
 import {
   clearStoredSession,
+  getStoredAccessToken,
+  getStoredRefreshToken,
   getStoredSession,
   setStoredSession,
-  type StoredSession,
 } from '@/core/auth/token-storage'
+import { authService } from '@/modules/auth/services/auth.service'
+import type { AuthRequestQuery } from '@/core/api/endpoints'
 import type { JwtResponseDto } from '@/modules/auth/types/auth.dto'
+import type {
+  LoginRequestDto,
+  RefreshTokenRequestDto,
+  RegisterRequestDto,
+} from '@/modules/auth/types/auth.dto'
+import { resetFeatureStores } from '@/stores/reset'
+
+function isNonEmpty(value: string | null | undefined): value is string {
+  return Boolean(value && value.trim())
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
@@ -16,6 +29,23 @@ export const useAuthStore = defineStore('auth', () => {
   const lastName = ref<string | null>(null)
 
   const isAuthenticated = computed(() => Boolean(accessToken.value && refreshToken.value))
+
+  function setSessionTokens(nextAccessToken: string, nextRefreshToken: string): void {
+    accessToken.value = nextAccessToken
+    refreshToken.value = nextRefreshToken
+    setStoredSession({
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken,
+    })
+  }
+
+  function clearSessionState(): void {
+    accessToken.value = null
+    refreshToken.value = null
+    firstName.value = null
+    lastName.value = null
+    clearStoredSession()
+  }
 
   function initializeFromStorage(): void {
     const stored = getStoredSession()
@@ -29,26 +59,75 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function applyJwtSession(payload: JwtResponseDto): void {
-    accessToken.value = payload.token
-    refreshToken.value = payload.refreshToken
+    if (!isNonEmpty(payload.token) || !isNonEmpty(payload.refreshToken)) {
+      throw new Error('Invalid JWT response: token pair is incomplete')
+    }
+
+    setSessionTokens(payload.token, payload.refreshToken)
     firstName.value = payload.firstName
     lastName.value = payload.lastName
+  }
 
-    if (payload.token && payload.refreshToken) {
-      const session: StoredSession = {
-        accessToken: payload.token,
-        refreshToken: payload.refreshToken,
+  async function login(payload: LoginRequestDto, query?: AuthRequestQuery): Promise<void> {
+    const response = await authService.login(payload, query)
+    applyJwtSession(response)
+  }
+
+  async function register(payload: RegisterRequestDto, query?: AuthRequestQuery): Promise<void> {
+    const response = await authService.register(payload, query)
+    applyJwtSession(response)
+  }
+
+  async function refreshSession(query?: AuthRequestQuery): Promise<string> {
+    const currentRefreshToken = refreshToken.value ?? getStoredRefreshToken()
+    const currentAccessToken = accessToken.value ?? getStoredAccessToken()
+
+    if (!isNonEmpty(currentRefreshToken)) {
+      throw new Error('Missing refresh token for refresh flow')
+    }
+
+    const payload: RefreshTokenRequestDto = {
+      jwt: currentAccessToken,
+      refreshToken: currentRefreshToken,
+    }
+
+    try {
+      const response = await authService.refreshToken(payload, query)
+
+      if (!isNonEmpty(response.token) || !isNonEmpty(response.refreshToken)) {
+        throw new Error('Refresh response missing required token pair')
       }
-      setStoredSession(session)
+
+      applyJwtSession(response)
+      return response.token
+    } catch (error) {
+      clearSessionState()
+      resetFeatureStores()
+      throw error
     }
   }
 
-  function clearSession(): void {
-    accessToken.value = null
-    refreshToken.value = null
-    firstName.value = null
-    lastName.value = null
-    clearStoredSession()
+  async function ensureAuthenticated(): Promise<boolean> {
+    if (isAuthenticated.value) {
+      return true
+    }
+
+    const hasRefreshToken = Boolean(refreshToken.value ?? getStoredRefreshToken())
+    if (!hasRefreshToken) {
+      return false
+    }
+
+    try {
+      await refreshSession()
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function logout(): void {
+    clearSessionState()
+    resetFeatureStores()
   }
 
   return {
@@ -58,7 +137,11 @@ export const useAuthStore = defineStore('auth', () => {
     lastName,
     isAuthenticated,
     initializeFromStorage,
+    login,
+    register,
+    refreshSession,
+    ensureAuthenticated,
     applyJwtSession,
-    clearSession,
+    logout,
   }
 })

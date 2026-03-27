@@ -18,6 +18,7 @@ export interface RequestOptions<TBody = unknown> {
   query?: QueryParams
   body?: TBody
   requiresAuth?: boolean
+  skipAuthRefresh?: boolean
   headers?: Record<string, string>
   signal?: AbortSignal
 }
