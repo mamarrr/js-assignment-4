@@ -17,7 +17,7 @@ import type {
   RegisterRequestDto,
 } from '@/modules/auth/types/auth.dto'
 import { toAppErrorMessage } from '@/shared/utils/error-message'
-import { resetFeatureStores } from '@/stores/reset'
+import { resetFeatureStores } from '@/app/session/reset-feature-stores'
 
 function isNonEmpty(value: string | null | undefined): value is string {
   return Boolean(value && value.trim())
