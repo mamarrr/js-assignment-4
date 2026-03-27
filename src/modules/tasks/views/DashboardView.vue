@@ -75,6 +75,12 @@ const isInitialLoading = computed(() => {
   return tasksStore.isLoading || prioritiesStore.isLoading || categoriesStore.isLoading
 })
 
+const isCreateTaskExpanded = ref(false)
+
+const visibleTasks = computed(() => {
+  return tasksStore.items.filter((task) => !task.archived)
+})
+
 const canCreateTask = computed(() => {
   return Boolean(prioritiesStore.items.length && categoriesStore.items.length)
 })
@@ -462,8 +468,19 @@ onMounted(() => {
       </p>
 
       <form class="card" @submit.prevent="submitTaskCreate">
-        <h2>Create task</h2>
-        <fieldset :disabled="tasksStore.isMutating || isInitialLoading">
+        <div class="section-header">
+          <h2>Create task</h2>
+          <button
+            type="button"
+            class="secondary"
+            :disabled="tasksStore.isMutating || isInitialLoading"
+            @click="isCreateTaskExpanded = !isCreateTaskExpanded"
+          >
+            {{ isCreateTaskExpanded ? 'Collapse' : 'Expand' }}
+          </button>
+        </div>
+
+        <fieldset v-if="isCreateTaskExpanded" :disabled="tasksStore.isMutating || isInitialLoading">
           <label>
             Name
             <input v-model="createTaskForm.name" maxlength="128" @blur="validateCreateTaskInline" />
@@ -522,10 +539,10 @@ onMounted(() => {
 
       <p v-if="tasksStore.isLoading" class="status info">Loading tasks...</p>
       <p v-else-if="tasksStore.errorMessage" class="status error">{{ tasksStore.errorMessage }}</p>
-      <p v-else-if="tasksStore.isEmpty" class="status empty">No tasks available yet.</p>
+      <p v-else-if="visibleTasks.length === 0" class="status empty">No tasks available yet.</p>
 
       <div v-else class="tasks-list">
-        <article v-for="task in tasksStore.items" :key="task.id" class="card task-card">
+        <article v-for="task in visibleTasks" :key="task.id" class="card task-card">
           <template v-if="editingTaskId === task.id">
             <h2>Edit task</h2>
             <label>
@@ -981,6 +998,22 @@ button.danger {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.side-tools {
+  align-content: start;
+  align-items: start;
 }
 
 .status {
