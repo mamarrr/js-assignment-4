@@ -188,12 +188,14 @@ watch(
       </form>
 
       <p v-if="categoriesStore.isLoading" class="status info">Loading categories...</p>
-      <p v-else-if="categoriesStore.errorMessage" class="status error">
+      <p v-if="!categoriesStore.isLoading && categoriesStore.errorMessage" class="status error">
         {{ categoriesStore.errorMessage }}
       </p>
-      <p v-else-if="categoriesStore.isEmpty" class="status empty">No categories available.</p>
+      <p v-if="!categoriesStore.isLoading && categoriesStore.isEmpty" class="status empty">
+        No categories available.
+      </p>
 
-      <div v-else class="mini-list">
+      <div v-if="!categoriesStore.isLoading && !categoriesStore.isEmpty" class="mini-list">
         <article v-for="category in categoriesStore.items" :key="category.id" class="card">
           <template v-if="editingCategoryId === category.id">
             <label>

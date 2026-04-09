@@ -42,7 +42,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   }
 
   const contentType = response.headers.get('content-type')
-  const isJson = contentType?.includes('application/json') || contentType?.includes('text/json')
+  const isJson = contentType?.toLowerCase().includes('json')
 
   if (isJson) {
     return response.json()

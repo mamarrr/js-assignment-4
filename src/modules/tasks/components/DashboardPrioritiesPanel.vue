@@ -188,12 +188,14 @@ watch(
       </form>
 
       <p v-if="prioritiesStore.isLoading" class="status info">Loading priorities...</p>
-      <p v-else-if="prioritiesStore.errorMessage" class="status error">
+      <p v-if="!prioritiesStore.isLoading && prioritiesStore.errorMessage" class="status error">
         {{ prioritiesStore.errorMessage }}
       </p>
-      <p v-else-if="prioritiesStore.isEmpty" class="status empty">No priorities available.</p>
+      <p v-if="!prioritiesStore.isLoading && prioritiesStore.isEmpty" class="status empty">
+        No priorities available.
+      </p>
 
-      <div v-else class="mini-list">
+      <div v-if="!prioritiesStore.isLoading && !prioritiesStore.isEmpty" class="mini-list">
         <article v-for="priority in prioritiesStore.items" :key="priority.id" class="card">
           <template v-if="editingPriorityId === priority.id">
             <label>

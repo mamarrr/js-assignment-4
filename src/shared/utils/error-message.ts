@@ -1,14 +1,41 @@
 import { ApiClientError } from '@/core/api/http-client'
 import type { ApiMessageDto, ProblemDetailsDto } from '@/shared/types/common'
 
+const DEFAULT_USER_ERROR_MESSAGE = 'Unexpected error. Please try again.'
+
 export function toUserMessage(errorBody: unknown): string {
-  if (!errorBody || typeof errorBody !== 'object') {
-    return 'Unexpected error. Please try again.'
+  if (typeof errorBody === 'string') {
+    const trimmedErrorBody = errorBody.trim()
+    if (!trimmedErrorBody.length) {
+      return DEFAULT_USER_ERROR_MESSAGE
+    }
+
+    const looksLikeJson =
+      (trimmedErrorBody.startsWith('{') && trimmedErrorBody.endsWith('}')) ||
+      (trimmedErrorBody.startsWith('[') && trimmedErrorBody.endsWith(']'))
+
+    if (looksLikeJson) {
+      try {
+        return toUserMessage(JSON.parse(trimmedErrorBody))
+      } catch {
+        return trimmedErrorBody
+      }
+    }
+
+    return trimmedErrorBody
   }
 
-  const messagePayload = errorBody as Partial<ApiMessageDto>
+  if (!errorBody || typeof errorBody !== 'object') {
+    return DEFAULT_USER_ERROR_MESSAGE
+  }
+
+  const messagePayload = errorBody as Partial<ApiMessageDto> & { message?: unknown }
   if (Array.isArray(messagePayload.messages) && messagePayload.messages.length) {
     return messagePayload.messages.join(' ')
+  }
+
+  if (typeof messagePayload.message === 'string' && messagePayload.message.trim().length) {
+    return messagePayload.message
   }
 
   const problemDetails = errorBody as ProblemDetailsDto
@@ -20,7 +47,7 @@ export function toUserMessage(errorBody: unknown): string {
     return problemDetails.title
   }
 
-  return 'Unexpected error. Please try again.'
+  return DEFAULT_USER_ERROR_MESSAGE
 }
 
 function logTechnicalDetails(error: unknown): void {
@@ -33,7 +60,7 @@ function toStatusAwareMessage(status: number, body: unknown): string {
   const backendMessage = toUserMessage(body)
 
   if (status === 400) {
-    return backendMessage !== 'Unexpected error. Please try again.'
+    return backendMessage !== DEFAULT_USER_ERROR_MESSAGE
       ? backendMessage
       : 'Please review the highlighted data and try again.'
   }
@@ -51,7 +78,11 @@ function toStatusAwareMessage(status: number, body: unknown): string {
   }
 
   if (status === 409) {
-    return backendMessage !== 'Unexpected error. Please try again.'
+    if (import.meta.env.DEV) {
+      console.debug('[ErrorPolicy][409]', { body, backendMessage })
+    }
+
+    return backendMessage !== DEFAULT_USER_ERROR_MESSAGE
       ? backendMessage
       : 'Conflict detected. Refresh your data and try again.'
   }
